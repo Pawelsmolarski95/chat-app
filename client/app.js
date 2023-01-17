@@ -1,4 +1,4 @@
-
+const socket = io();
 const loginForm = document.getElementById('welcome-form');
 const messageSection = document.getElementById('messages-section');
 const messageList = document.getElementById('messages-list');
@@ -8,6 +8,7 @@ const messageContentInput = document.getElementById('message-content');
 
 let userName = '';
 
+socket.on('message', ({author, content}) => addMessage(author, content));
 
 function login(event) {
     event.preventDefault();
@@ -22,12 +23,10 @@ function login(event) {
 
 function sendMessage(event) {
     event.preventDefault();
-    if(messageContentInput.value === '') { 
-        alert(`Hey ${userName}! This field can't be empty`)
-    } else {
-        addMessage(userName, messageContentInput.value);
-        messageContentInput.value = '';
-    } 
+    if(messageContentInput.value === '')  alert(`Hey ${userName}! This field can't be empty`);
+    addMessage(userName, messageContentInput.value);
+    socket.emit('message',({author: userName , content: messageContentInput.value}))
+    messageContentInput.value = '';
 };
 
 function addMessage(author, content) {
@@ -37,16 +36,14 @@ function addMessage(author, content) {
     if(author === userName) {
         message.classList.add('message--self');
     }
-    const h3 = document.createElement('h3');
-    h3.classList.add('message__author');
-    const div = document.createElement('div');
-    div.classList.add('message__content');
-    h3.textContent = userName !== author ? userName : 'You';
-    div.textContent = content;
-    message.appendChild(h3);
-    message.appendChild(div);
+    message.innerHTML = `
+    <h3 class="message__author">${userName === author ? 'You' : author}</h3>
+    <div class="message__content">
+      ${content}
+    </div>`;
     messageList.appendChild(message);
 }
 
 loginForm.addEventListener('submit', login);
 addMessageForm.addEventListener('submit', sendMessage);
+socket.on('message', addMessage)
